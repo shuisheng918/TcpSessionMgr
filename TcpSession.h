@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "MsgDecoder.h"
+#include <stdlib.h>
 
 class TcpSession;
 class TcpSessionManager;
@@ -26,18 +26,14 @@ class TcpSession
 {
     friend class TcpSessionManager;
 public:
-    TcpSession(MsgDecoderBase *pMsgDecoder) : m_sessionId(-1), m_peerIp(0), m_peerPort(0), m_socket(-1), 
-        m_sessionType(0), m_pUserObj(NULL), m_pSendBufHead(NULL), m_pSendBufTail(NULL), 
-        m_pMsgDecoder(pMsgDecoder), m_pSessionMgr(NULL)
+    TcpSession() : m_sessionId(-1), m_peerIp(0), m_peerPort(0), m_socket(-1), 
+        m_sessionType(0), m_pUserObj(NULL), m_pSendBufHead(NULL), m_pSendBufTail(NULL), m_pSessionMgr(NULL)
     {
-        if (m_pMsgDecoder == NULL)
-        {
-            m_pMsgDecoder = new DefaultMsgDecoder;
-        }
     }
     virtual ~TcpSession();
     virtual void OnRead();
     virtual void OnWrite();
+    void Close();
     void SendData(const char *data, int len);
     int  SendPendingData();
     unsigned long GetSessionID()
@@ -68,7 +64,7 @@ public:
     {
         return m_pUserObj;
     }
-private:
+protected:
     static void OnSessionIOReady(int fd, int events, void *arg);
     
     unsigned long m_sessionId;
@@ -79,7 +75,6 @@ private:
     void * m_pUserObj;
     SendBuf * m_pSendBufHead;
     SendBuf * m_pSendBufTail;
-    MsgDecoderBase *m_pMsgDecoder;
     TcpSessionManager * m_pSessionMgr;
 };
 

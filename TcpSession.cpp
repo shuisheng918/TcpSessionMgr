@@ -54,11 +54,7 @@ TcpSession::~TcpSession()
         }
         m_pSendBufTail = NULL;
     }
-    if (m_pMsgDecoder != NULL)
-    {
-        delete m_pMsgDecoder;
-        m_pMsgDecoder = NULL;
-    }
+
     m_peerIp = 0;
     m_peerPort = 0;
     m_socket = -1;
@@ -78,7 +74,7 @@ void TcpSession::OnRead()
         ret = read(m_socket, buf, sizeof(buf));
         if (ret > 0)
         {
-            m_pMsgDecoder->AppendData(buf, ret);
+            m_pSessionMgr->ProcessMessage(this, buf, ret);
         }
         else if (ret == 0)
         {// closed by peer host
@@ -103,42 +99,21 @@ void TcpSession::OnRead()
         }
     }
     
-    const char *pMsg = NULL;
-    int msgLen = 0;
-    while (true)
-    {
-        ret = m_pMsgDecoder->GetMessage(&pMsg, &msgLen);
-        if (0 == ret)
-        {
-            if (pMsg != NULL && msgLen > 0)
-            {
-                m_pSessionMgr->ProcessMessage(this, pMsg, msgLen);
-            }
-        }
-        else if (1 == ret)
-        {
-            break;
-        }
-        else // -1
-        {
-            bNeedEndSession = true;
-            break;
-        }
-
-    }
-
     if (bNeedEndSession)
     {
         m_pSessionMgr->EndSession(m_sessionId);
     }
-    
-
 }
 
 void TcpSession::OnWrite()
 {
     SendPendingData();
 }
+
+void TcpSession::Close()
+{
+    m_pSessionMgr->EndSession(m_sessionId);
+}
 
 void TcpSession::SendData(const char *data, int len)
 {
@@ -207,10 +182,12 @@ topending:
     }
 }
 
-//return value:
-//    -1    socket error, session will be end
-//     0    all pending data sended
-//     1    patial pending data sended
+/** 
+ * return value:
+ *    -1    socket error, session will be end
+ *     0    all pending data sended
+ *     1    patial pending data sended
+ */
 int TcpSession::SendPendingData()
 {
     SendBuf *pBuf = m_pSendBufHead;

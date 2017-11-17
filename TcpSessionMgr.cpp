@@ -207,11 +207,11 @@ void TcpSessionManager::OnSessionGC()
     m_sessionGC.clear();
 }
 
-/*
-return
-    -1   connect error
-    0    request connect ok. 
-*/
+/**
+ * return
+ *   -1   connect error
+ *    0   request connect ok. 
+ */
 int TcpSessionManager::Connect(const char *ip, unsigned short port, int sessionType)
 {
     int connFd = socket(AF_INET, SOCK_STREAM, 0);
@@ -372,8 +372,12 @@ TcpSession * TcpSessionManager::CreateSession(int sessionType)
     TcpSession *pNewSession = NULL;
     switch (sessionType)
     {
-        default:
-            pNewSession = new TcpSession(NULL);
+        case DEFAULT_TCP_SESSION:
+            pNewSession = new DefaultTcpSession;
+            break;
+        case HTTP_SESSION:
+            pNewSession = new HttpSession;
+            break;
     }
     return pNewSession;
 }
