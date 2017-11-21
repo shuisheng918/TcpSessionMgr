@@ -1,4 +1,5 @@
 #include "TcpSessionMgr.h"
+#include <signal.h>
 
 class MyHttpServer : public TcpSessionManager
 {
@@ -23,13 +24,28 @@ public:
 
 };
 
+void OnSignal(int sig, void * arg)
+{
+    sw_ev_loop_exit((sw_ev_context_t *)arg);
+    printf("OnSignal\n");
+}
+
+void OnLog(int level, const char *msg)
+{
+    printf("%d: %s\n", level, msg);
+}
+
 int main(void)
 {
-    struct sw_ev_context * pEvCtx = sw_ev_context_new();
-    MyHttpServer httpd;
-    httpd.SetEventCtx(pEvCtx);
-    httpd.BindAndListen("0.0.0.0", 1111, HTTP_SESSION);
+    sw_ev_context_t * pEvCtx = sw_ev_context_new();
+    sw_set_log_func(OnLog);
+    sw_ev_signal_add(pEvCtx, SIGINT, OnSignal, pEvCtx);
+    MyHttpServer *pHttpd = new MyHttpServer;
+    pHttpd->SetEventCtx(pEvCtx);
+    pHttpd->BindAndListen("0.0.0.0", 1111, HTTP_SESSION);
     sw_ev_loop(pEvCtx);
+    delete pHttpd;
+    pHttpd = NULL;
     sw_ev_context_free(pEvCtx);
 }
 

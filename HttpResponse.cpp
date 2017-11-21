@@ -66,7 +66,7 @@ void HttpResponse::SendResponse()
 {
     char codeBuf[10], contentLenBuf[20];
     snprintf(codeBuf, sizeof(codeBuf), "%d", m_responseCode);
-    string header = m_httpVersion + " " + codeBuf + GetReason((ERespCode)m_responseCode) + "\r\n";
+    string header = m_httpVersion + " " + codeBuf + " " + GetReason((ERespCode)m_responseCode) + "\r\n";
     snprintf(contentLenBuf, sizeof(contentLenBuf), "%lu", m_body.size());
     m_headFields["Content-Length"] = contentLenBuf;
     for (auto it = m_headFields.begin(); it != m_headFields.end(); ++it)

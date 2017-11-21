@@ -32,12 +32,12 @@ enum  ESessionType
 class TcpSessionManager
 {
 public:
-    TcpSessionManager() : m_pEvCtx(NULL), m_pSessionGCTimer(NULL)
+    TcpSessionManager() : m_pEvCtx(NULL), m_pSessionGCCheck(NULL)
     {
     }
     virtual ~TcpSessionManager();
     
-    void SetEventCtx(struct sw_ev_context *ctx) { m_pEvCtx = ctx; }
+    void SetEventCtx(sw_ev_context_t *ctx) { m_pEvCtx = ctx; }
     struct sw_ev_context* GetEventCtx() { return m_pEvCtx; }
     void BindAndListen(const char *ip, unsigned short port, int sessionType);
 
@@ -88,11 +88,11 @@ protected:
     void OnSessionGC();
     static void OnAcceptReady(const int listenFd, int events, void *arg);
     static void OnConnectReady(const int connFd, int events, void *arg);
-    static void OnSessionGCTimer(void *arg);
+    static void OnCheck(void *arg);
 protected:
-    struct sw_ev_context *m_pEvCtx;
+    sw_ev_context_t *m_pEvCtx;
     std::unordered_map<unsigned long, TcpSession*> m_sessions; // key is sessionid
     std::vector<ListenInfo*> m_listens;
     std::set<TcpSession*> m_sessionGC;  // session objects garbage collection
-    struct sw_ev_timer *  m_pSessionGCTimer;
+    sw_ev_check_t   *m_pSessionGCCheck;
 };

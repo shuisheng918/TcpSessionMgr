@@ -97,7 +97,7 @@ void TcpSessionManager::OnConnectReady(const int connFd, int events, void *arg)
     }
 }
 
-void TcpSessionManager::OnSessionGCTimer(void *arg)
+void TcpSessionManager::OnCheck(void *arg)
 {
     TcpSessionManager *pMgr = (TcpSessionManager *)arg;
     if (pMgr != NULL)
@@ -313,9 +313,9 @@ int TcpSessionManager::BeginSession(int connFd, int peerIp, int peerPort, int se
         pSession->m_sessionId = GenSessionId();
     }
 
-    if (m_pSessionGCTimer == NULL)
+    if (m_pSessionGCCheck == NULL)
     {
-        m_pSessionGCTimer = sw_ev_timer_add(m_pEvCtx, 500, OnSessionGCTimer, this);
+        m_pSessionGCCheck =  sw_ev_check_add(m_pEvCtx, OnCheck, this);
     }
     OnSessionHasBegin(pSession);
     
@@ -403,10 +403,10 @@ TcpSessionManager::~TcpSessionManager()
             m_listens[i] = NULL;
         }
     }
-    if (m_pSessionGCTimer)
+    if (m_pSessionGCCheck)
     {
-        sw_ev_timer_del(m_pEvCtx, m_pSessionGCTimer);
-        m_pSessionGCTimer = NULL;
+        sw_ev_check_del(m_pEvCtx, m_pSessionGCCheck);
+        m_pSessionGCCheck = NULL;
     }
     m_pEvCtx = NULL;
 }
