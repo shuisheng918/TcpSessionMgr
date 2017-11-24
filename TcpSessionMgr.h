@@ -6,8 +6,6 @@
 #include <sw_event.h>
 
 #include "TcpSession.h"
-#include "DefaultTcpSession.h"
-#include "HttpSession.h"
 
 #define INVALID_SESSION_ID  (-1UL)
 
@@ -26,7 +24,9 @@ struct ListenInfo
 enum  ESessionType
 {
     DEFAULT_TCP_SESSION,
-    HTTP_SESSION
+    HTTP_SERVER_SESSION,
+    HTTP_CLIENT_SESSION,
+    // add your self session type here
 };
 
 class TcpSessionManager
@@ -38,7 +38,7 @@ public:
     virtual ~TcpSessionManager();
     
     void SetEventCtx(sw_ev_context_t *ctx) { m_pEvCtx = ctx; }
-    struct sw_ev_context* GetEventCtx() { return m_pEvCtx; }
+    sw_ev_context_t * GetEventCtx() { return m_pEvCtx; }
     void BindAndListen(const char *ip, unsigned short port, int sessionType);
 
     /**
@@ -72,15 +72,6 @@ public:
      * Overide this function to unmap sessionid and user object.
      */
     virtual void OnSessionWillEnd(TcpSession *pSession) {   }
-    /**
-     * Overide this function to implement business logic for mormal TcpSession .
-     */
-    virtual void ProcessMessage(TcpSession *pSession, const char * data, unsigned len) {   }
-    /**
-     * Process http request
-     */
-    virtual void ProcessHttpMessage(HttpSession *pHttpSession) {        }
-
 protected:
     bool AddSession(TcpSession *pSession);
     void RemoveSession(unsigned long sessionId);

@@ -27,7 +27,11 @@ private:
 class DefaultTcpSession : public TcpSession
 {
 public:
-    virtual void OnRead();
+    virtual void OnRecvData(const char *data, int len);
+    virtual void ProcessMessage(const char *data, int len)
+    {
+        printf("msg=%p,len=%d\n", data, len);
+    }
 protected:
     DefaultMsgDecoder m_decoder;
 };

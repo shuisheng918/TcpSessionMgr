@@ -52,69 +52,22 @@ int  DefaultMsgDecoder::GetMessage(const char **ppMsg, int *pMsgLen)
     }
 }
 
-void DefaultTcpSession::OnRead()
+void DefaultTcpSession::OnRecvData(const char *data, int len)
 {
-    // default implement
-    int ret;
-    bool bNeedEndSession = false;
-    char buf[4096];
-    while (true)
-    {
-        ret = read(m_socket, buf, sizeof(buf));
-        if (ret > 0)
-        {
-            m_decoder.AppendData(buf, ret);
-        }
-        else if (ret == 0)
-        {// closed by peer host
-            bNeedEndSession = true;
-            break;
-        }
-        else if (ret < 0)
-        {
-            if (errno == EINTR)
-            {
-                continue;
-            }
-            else if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                break;
-            }
-            else
-            {// socket occur exception
-                bNeedEndSession = true;
-                break;
-            }
-        }
-    }
-    
+    m_decoder.AppendData(data, len);
+
     const char *pMsg = NULL;
-    int msgLen = 0;
-    while (true)
+    int msgLen = 0, ret;
+    while ((ret = m_decoder.GetMessage(&pMsg, &msgLen)) == 0)
     {
-        ret = m_decoder.GetMessage(&pMsg, &msgLen);
-        if (0 == ret)
+        if (pMsg != NULL && msgLen > 0)
         {
-            if (pMsg != NULL && msgLen > 0)
-            {
-                m_pSessionMgr->ProcessMessage(this, pMsg, msgLen);
-            }
+            ProcessMessage(pMsg, msgLen);
         }
-        else if (1 == ret)
-        {
-            break;
-        }
-        else // -1
-        {
-            bNeedEndSession = true;
-            break;
-        }
-
     }
-
-    if (bNeedEndSession)
+    if (ret == -1)
     {
-        m_pSessionMgr->EndSession(m_sessionId);
+        Close();
     }
 }
 

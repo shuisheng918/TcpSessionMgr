@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
+#include <errno.h>
 #include <sw_event.h>
 
 #include "TcpSessionMgr.h"
@@ -36,9 +37,12 @@ void TcpSession::OnSessionIOReady(int fd, int events, void *arg)
 
 TcpSession::~TcpSession()
 {
-    sw_ev_io_del(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_READ | SW_EV_WRITE);
-    close(m_socket);
-    m_socket = -1;
+    if (m_socket != -1)
+    {
+        sw_ev_io_del(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_READ | SW_EV_WRITE);
+        close(m_socket);
+        m_socket = -1;
+    }
     if (m_pSendBufHead != NULL)
     {
         SendBuf *pTmp;
@@ -57,7 +61,6 @@ TcpSession::~TcpSession()
 
     m_peerIp = 0;
     m_peerPort = 0;
-    m_socket = -1;
     m_sessionId = -1;
     m_sessionType = 0;
     
@@ -74,7 +77,7 @@ void TcpSession::OnRead()
         ret = read(m_socket, buf, sizeof(buf));
         if (ret > 0)
         {
-            m_pSessionMgr->ProcessMessage(this, buf, ret);
+            OnRecvData(buf, ret);
         }
         else if (ret == 0)
         {// closed by peer host
@@ -101,19 +104,32 @@ void TcpSession::OnRead()
     
     if (bNeedEndSession)
     {
-        m_pSessionMgr->EndSession(m_sessionId);
+        Close();
     }
 }
 
 void TcpSession::OnWrite()
 {
-    SendPendingData();
+    int ret = SendPendingData();
+    if (ret == 0 && m_sentClose)
+    {
+        Close();
+    }
 }
 
 void TcpSession::Close()
 {
     m_pSessionMgr->EndSession(m_sessionId);
 }
+
+void TcpSession::SetSentClose(bool sentClose)
+{
+    m_sentClose = sentClose;
+    if (m_sentClose && m_pSendBufHead == NULL)
+    {
+        Close();
+    }
+}
 
 void TcpSession::SendData(const char *data, int len)
 {
@@ -131,6 +147,10 @@ void TcpSession::SendData(const char *data, int len)
             assert(len - sended > 0);
             if (ret == len - sended) //ok
             {
+                if (m_sentClose)
+                {
+                    Close();
+                }
                 return;
             }
             else if (ret >= 0)
@@ -145,12 +165,11 @@ void TcpSession::SendData(const char *data, int len)
                 }
                 else if (errno == EAGAIN || errno == EWOULDBLOCK)
                 {
-                    //event_add(&m_wev, NULL);
                     goto topending;
                 }
                 else //socket exception
                 {
-                    m_pSessionMgr->EndSession(m_sessionId);
+                    Close();
                     return;
                 }
             }
@@ -223,7 +242,7 @@ int TcpSession::SendPendingData()
             }
             else //socket exception
             {
-                m_pSessionMgr->EndSession(m_sessionId);
+                Close();
                 return -1;
             }
         }

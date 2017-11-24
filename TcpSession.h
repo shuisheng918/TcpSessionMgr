@@ -27,44 +27,31 @@ class TcpSession
     friend class TcpSessionManager;
 public:
     TcpSession() : m_sessionId(-1), m_peerIp(0), m_peerPort(0), m_socket(-1), 
-        m_sessionType(0), m_pUserObj(NULL), m_pSendBufHead(NULL), m_pSendBufTail(NULL), m_pSessionMgr(NULL)
+        m_sessionType(0), m_pUserObj(NULL), m_pSendBufHead(NULL), m_pSendBufTail(NULL), m_pSessionMgr(NULL), m_sentClose(false)
     {
     }
     virtual ~TcpSession();
-    virtual void OnRead();
-    virtual void OnWrite();
+    virtual void OnRecvData(const char *data, int len) = 0;
+
     void Close();
+    /**
+     * When sentClose is true, this session will be closed after sended all pending data.
+     */
+    void SetSentClose(bool sentClose);
     void SendData(const char *data, int len);
     int  SendPendingData();
-    unsigned long GetSessionID()
-    {
-        return m_sessionId;
-    }
-    int GetPeerIP()
-    {
-        return m_peerIp;
-    }
-    int GetPeerPort()
-    {
-        return m_peerPort;
-    }
-    int GetSessionType()
-    {
-        return m_sessionType;
-    }
-    int GetSocket()
-    {
-        return m_socket;
-    }
-    void SetUserObj(void *pObj)
-    {
-        m_pUserObj = pObj;
-    }
-    void * GetUserObj()
-    {
-        return m_pUserObj;
-    }
+    unsigned long GetSessionID() { return m_sessionId; }
+    int    GetPeerIP() { return m_peerIp; }
+    int    GetPeerPort() { return m_peerPort; }
+    int    GetSessionType() { return m_sessionType; }
+    int    GetSocket() { return m_socket; }
+    void   SetUserObj(void *pObj) { m_pUserObj = pObj; }
+    void * GetUserObj() { return m_pUserObj; }
+    
 protected:
+    void OnRead();
+    void OnWrite();
+
     static void OnSessionIOReady(int fd, int events, void *arg);
     
     unsigned long m_sessionId;
@@ -76,6 +63,7 @@ protected:
     SendBuf * m_pSendBufHead;
     SendBuf * m_pSendBufTail;
     TcpSessionManager * m_pSessionMgr;
+    bool m_sentClose;
 };
 
 

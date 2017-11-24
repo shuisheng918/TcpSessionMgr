@@ -3,10 +3,17 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+#include "DefaultTcpSession.h"
+#include "HttpServerSession.h"
+#include "HttpClientSession.h"
+
 
 using namespace std;
 
@@ -72,29 +79,20 @@ void TcpSessionManager::OnConnectReady(const int connFd, int events, void *arg)
         printf("getsockopt: %s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
         return;
     }
-
     ConnectInfo *pConnInfo = (ConnectInfo*)arg;
+    assert(pConnInfo);
+    assert(pConnInfo->m_pSessionMgr);
     if (sockErrno == 0 && (events & SW_EV_WRITE)) //ok ,connect success
     {
-        if (pConnInfo != NULL && pConnInfo->m_pSessionMgr != NULL)
-        {
-            pConnInfo->m_pSessionMgr->OnConnect(connFd, pConnInfo->m_peerIp, pConnInfo->m_peerPort,
-                                                1, pConnInfo->m_sessionType);
-        }
-        return;
+        pConnInfo->m_pSessionMgr->OnConnect(connFd, pConnInfo->m_peerIp, pConnInfo->m_peerPort, 1, pConnInfo->m_sessionType);
     }
-    else
+    else // connect fail
     {
-        pConnInfo->m_pSessionMgr->OnConnect(connFd, pConnInfo->m_peerIp, pConnInfo->m_peerPort, 
-                                            0, pConnInfo->m_sessionType);
+        pConnInfo->m_pSessionMgr->OnConnect(connFd, pConnInfo->m_peerIp, pConnInfo->m_peerPort, 0, pConnInfo->m_sessionType);
         sw_ev_io_del(pConnInfo->m_pEvCtx, connFd, SW_EV_WRITE | SW_EV_READ);
         close(connFd);
     }
-
-    if (pConnInfo != NULL)
-    {
-        delete pConnInfo;
-    }
+    delete pConnInfo;
 }
 
 void TcpSessionManager::OnCheck(void *arg)
@@ -172,7 +170,6 @@ void TcpSessionManager::OnAccept(int listenFd, int sessionType)
         {
             if (-1 == BeginSession(client, ntohl(addr.sin_addr.s_addr), ntohs(addr.sin_port), sessionType))
             {
-                sw_ev_io_del(m_pEvCtx, client, SW_EV_READ | SW_EV_WRITE);
                 close(client);
             }
         }
@@ -224,6 +221,22 @@ int TcpSessionManager::Connect(const char *ip, unsigned short port, int sessionT
     bzero(&serverAddr, sizeof(struct sockaddr_in));
     serverAddr.sin_family = AF_INET;  
     serverAddr.sin_addr.s_addr = inet_addr(ip);
+    if (serverAddr.sin_addr.s_addr == INADDR_NONE)
+	{
+	    char   dnsBuf[8192];
+        struct hostent hostinfo, *phost;
+        int err = 0;
+        int ret = gethostbyname_r(ip, &hostinfo, dnsBuf, sizeof(dnsBuf), &phost, &err);
+        if (ret == 0 && phost != NULL)
+        {
+            serverAddr.sin_addr.s_addr = *(uint32_t*)hostinfo.h_addr;
+        }
+        else
+		{
+			printf("gethostbyname_r failed, ip=%s\n", ip);
+			return -1;
+		}
+	}
     serverAddr.sin_port = htons(port);
 
     SetNonBlock(connFd);
@@ -270,7 +283,6 @@ void TcpSessionManager::OnConnect(int connFd, int peerIp, int peerPort, int succ
     {
         if (-1 == BeginSession(connFd, peerIp, peerPort, sessionType))
         {
-            sw_ev_io_del(m_pEvCtx, connFd, SW_EV_READ | SW_EV_WRITE);
             close(connFd);
         }
     }
@@ -327,7 +339,12 @@ void TcpSessionManager::EndSession(unsigned long sessionId)
     TcpSession *pSession = GetSession(sessionId);
     if (pSession != NULL)
     {
-        //OnSessionWillEnd(pSession);
+        if (pSession->m_socket != -1)
+        {
+            sw_ev_io_del(m_pEvCtx, pSession->m_socket, SW_EV_READ | SW_EV_WRITE);
+            close(pSession->m_socket);
+            pSession->m_socket = -1;
+        }
         RemoveSession(sessionId);
         m_sessionGC.insert(pSession);
     }
@@ -375,9 +392,13 @@ TcpSession * TcpSessionManager::CreateSession(int sessionType)
         case DEFAULT_TCP_SESSION:
             pNewSession = new DefaultTcpSession;
             break;
-        case HTTP_SESSION:
-            pNewSession = new HttpSession;
+        case HTTP_SERVER_SESSION:
+            pNewSession = new HttpServerSession;
             break;
+        case HTTP_CLIENT_SESSION:
+            pNewSession = new HttpClientSession;
+            break;
+
     }
     return pNewSession;
 }

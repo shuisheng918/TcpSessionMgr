@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-class HttpSession;
+class TcpSession;
 
 class HttpResponse
 {
@@ -59,14 +59,29 @@ public:
     };
     
 public:
-    HttpResponse() : m_pHttpSession(NULL) {      }
-    void SendResponse();
-
-    static const char * GetReason(ERespCode respCode);
+    void Reset();
+    void SetVersion(const std::string & ver) { m_httpVersion = ver; }
+    const std::string & GetVersion() const { return m_httpVersion; }
+    void SetRespCode(ERespCode code) { m_responseCode = code; }
+    int  GetRespCode() const { return m_responseCode; }
+    void SetReason(const std::string & reason) { m_reason = reason; }
+    const std::string & GetReason() const { return m_reason; }
+    void AddHeadField(const std::string & key, const std::string & value);
+    void DeleteHeadField(const std::string & key);
+    bool HasHeadField(const std::string & key) const;
+    std::string GetHeadField(const std::string & key) const;
+    const std::map<std::string, std::string> & GetHeadFields() const { return m_headFields; }
+    void SetHttpBody(const std::string & body);
+    void AppendHttpBody(const std::string & data);
+    void AppendHttpBody(const char * data, int len);
+    const std::string & GetHttpBody() const { return m_body; }
     
-    HttpSession * m_pHttpSession;
+    static const char * GetReason(ERespCode respCode);
+
+protected:
     std::string   m_httpVersion;
     int           m_responseCode;
-    std::map<std::string, std::string> m_headFields;
+    std::string   m_reason;
+    std::map<std::string, std::string> m_headFields; // key and value is lowercase
     std::string   m_body;
 };

@@ -1,5 +1,4 @@
 #include "HttpResponse.h"
-#include "HttpSession.h"
 
 using namespace std;
 
@@ -62,28 +61,60 @@ const char * HttpResponse::GetReason(ERespCode respCode)
     }
 }
 
-void HttpResponse::SendResponse()
+void HttpResponse::Reset()
 {
-    char codeBuf[10], contentLenBuf[20];
-    snprintf(codeBuf, sizeof(codeBuf), "%d", m_responseCode);
-    string header = m_httpVersion + " " + codeBuf + " " + GetReason((ERespCode)m_responseCode) + "\r\n";
-    snprintf(contentLenBuf, sizeof(contentLenBuf), "%lu", m_body.size());
-    m_headFields["Content-Length"] = contentLenBuf;
-    for (auto it = m_headFields.begin(); it != m_headFields.end(); ++it)
-    {
-        header += it->first;
-        header += ": ";
-        header += it->second;
-        header += "\r\n";
-    }
-    header += "\r\n";
-    header += m_body;
-    m_pHttpSession->SendData(header.data(), header.size());
-    //m_pHttpSession->SendData(m_body.data(), m_body.size());
+    m_httpVersion.clear();
+    m_responseCode = 0;
+    m_reason.clear();
+    m_headFields.clear();
+    m_body.clear();
 
-    if (!m_pHttpSession->m_keepAlive)
+}
+
+void HttpResponse::AddHeadField(const string & key, const string & value)
+{
+    if (!key.empty())
     {
-        m_pHttpSession->Close();
+        m_headFields[key] = value;
     }
 }
+
+void HttpResponse::DeleteHeadField(const string & key)
+{
+    m_headFields.erase(key);
+}
+
+bool HttpResponse::HasHeadField(const std::string & key) const
+{
+    return m_headFields.find(key) != m_headFields.end();
+}
+
+std::string HttpResponse::GetHeadField(const std::string & key) const
+{
+    auto it = m_headFields.find(key);
+    if (it != m_headFields.end())
+    {
+        return it->second;
+    }
+    return "";
+}
+
+void HttpResponse::SetHttpBody(const string & body)
+{
+    m_body = body;
+}
+
+void HttpResponse::AppendHttpBody(const string & data)
+{
+    m_body.append(data);
+}
+
+void HttpResponse::AppendHttpBody(const char * data, int len)
+{
+    if (data != NULL && len > 0)
+    {
+        m_body.append(data, len);
+    }
+}
+
 
