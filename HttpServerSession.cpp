@@ -38,6 +38,7 @@ void HttpServerSession::OnRecvData(const char *data, int len)
 void HttpServerSession::ProcessHttpRequest()
 {
     m_response.Reset();
+    m_response.SetVersion(m_request.GetVersion());
     m_response.SetRespCode(HttpResponse::HTTP_OK);
     m_response.AddHeadField("content-type", "text/html");
     //m_response.AppendHttpBody("<head><title>HELLO</title></head><body><h2>Hello world!</h2></body>\n");
