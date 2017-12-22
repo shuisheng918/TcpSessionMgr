@@ -14,6 +14,9 @@
 #include "HttpServerSession.h"
 #include "HttpClientSession.h"
 
+#ifdef ENABLE_SSL
+#include "SslServerSession.h"
+#endif
 
 using namespace std;
 
@@ -398,7 +401,11 @@ TcpSession * TcpSessionManager::CreateSession(int sessionType)
         case HTTP_CLIENT_SESSION:
             pNewSession = new HttpClientSession;
             break;
-
+#ifdef ENABLE_SSL
+        case SSL_SERVER_SESSION:
+            pNewSession = new SslServerSession;
+            break;
+#endif
     }
     return pNewSession;
 }

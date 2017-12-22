@@ -26,6 +26,10 @@ enum  ESessionType
     DEFAULT_TCP_SESSION,
     HTTP_SERVER_SESSION,
     HTTP_CLIENT_SESSION,
+#ifdef ENABLE_SSL
+    SSL_SERVER_SESSION,
+    SSL_CLIENT_SESSION,
+#endif
     // add your self session type here
 };
 
@@ -65,11 +69,11 @@ public:
     virtual TcpSession * CreateSession(int sessionType);
     virtual void OnConnect(int connFd, int peerIp, int peerPort, int success, int sessionType);
     /**
-     * Overide this function to map sessionid and user object.
+     * Overide this function to map sessionid and user object according your business logic.
      */
     virtual void OnSessionHasBegin(TcpSession *pSession) {   }
     /**
-     * Overide this function to unmap sessionid and user object.
+     * Overide this function to unmap sessionid and user object according your business logic.
      */
     virtual void OnSessionWillEnd(TcpSession *pSession) {   }
 protected:

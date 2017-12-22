@@ -205,7 +205,7 @@ topending:
  * return value:
  *    -1    socket error, session will be end
  *     0    all pending data sended
- *     1    patial pending data sended
+ *     1    partial pending data sended
  */
 int TcpSession::SendPendingData()
 {

@@ -1,11 +1,4 @@
-/**
- * 一个简单高效的TCP会话管理器。
- * 用session id 区分每一个tcp连接会话, 底层网络事件读写基于高性能 libswevent 库.
- * 几分钟的移植时间就可让你的程序拥有高效率处理网络会话功能，包括侦听客户端
- * 连接、主动连接其他服务器，并将tcp会话统一管理。
- * 
- * Copyright (c) 2017 ShuishengWu <shuisheng918@gmail.com>
- */
+
 
 #pragma once
 
@@ -31,6 +24,8 @@ public:
     {
     }
     virtual ~TcpSession();
+    virtual void OnRead();
+    virtual void OnWrite();
     virtual void OnRecvData(const char *data, int len) = 0;
 
     void Close();
@@ -38,8 +33,8 @@ public:
      * When sentClose is true, this session will be closed after sended all pending data.
      */
     void SetSentClose(bool sentClose);
-    void SendData(const char *data, int len);
-    int  SendPendingData();
+    virtual void SendData(const char *data, int len);
+    virtual int  SendPendingData();
     unsigned long GetSessionID() { return m_sessionId; }
     int    GetPeerIP() { return m_peerIp; }
     int    GetPeerPort() { return m_peerPort; }
@@ -49,9 +44,6 @@ public:
     void * GetUserObj() { return m_pUserObj; }
     
 protected:
-    void OnRead();
-    void OnWrite();
-
     static void OnSessionIOReady(int fd, int events, void *arg);
     
     unsigned long m_sessionId;
