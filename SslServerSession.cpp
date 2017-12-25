@@ -4,10 +4,11 @@
 #include <assert.h>
 #include <openssl/err.h>
 #include <string>
+#include <sw_event.h>
+#include "TcpSessionMgr.h"
 
 SslServerSession::~SslServerSession()
 {
-    printf("~SslServerSession\n");
     if (m_pSSL != NULL)
     {
         SSL_free(m_pSSL);
@@ -26,7 +27,6 @@ void SslServerSession::Init(SSL_CTX *pSslCtx)
 
 void SslServerSession::OnRead()
 {
-    printf("OnRead\n");
     int ret = 0;
     if (m_state == INIT)
     {
@@ -74,7 +74,6 @@ void SslServerSession::OnRead()
 
 void SslServerSession::OnWrite()
 {
-    printf("OnWrite\n");
     int ret = 0;
     if (m_state == INIT)
     {
@@ -114,72 +113,6 @@ void SslServerSession::OnRecvData(const char *data, int len)
     // echo
     SendData(data, len);
 }
-
-/*
-void SslServerSession::SendData(const char *data, int len)
-{
-    if (data == NULL || len <= 0)
-    {
-        return;
-    }
-    int retSendPending = SendPendingData();
-    int sended = 0;
-    if (retSendPending == 0)
-    {
-        int ret, err;
-        while ((ret = SSL_write(m_pSSL, &data[sended], len - sended)) > 0)
-        {
-            sended += ret;
-            if (sended == len) //ok
-            {
-                if (m_sentClose)
-                {
-                    SSL_shutdown(m_pSSL);
-                    Close();
-                }
-                return;
-            }
-        }
-        err = SSL_get_error(m_pSSL, ret);
-        if (err == SSL_ERROR_WANT_WRITE)
-        {
-            goto topending;
-        }
-        else
-        {
-            SSL_shutdown(m_pSSL);
-            m_state = CLOSE;
-            Close();
-            return;
-        }
-    }
-    else if (retSendPending == 1) //append data to pending data list tail
-    {
-topending:
-        printf("pending\n");
-        SendBuf *pSendBuf = new SendBuf;
-        assert(len - sended > 0);
-        pSendBuf->m_data = new char [len - sended];
-        pSendBuf->m_len = len - sended;
-        memcpy(pSendBuf->m_data, &data[sended], len - sended);
-        pSendBuf->m_sendOff = 0;
-        pSendBuf->m_next = NULL;
-        if (m_pSendBufTail == NULL)
-        {
-            m_pSendBufHead = m_pSendBufTail = pSendBuf;
-        }
-        else
-        {
-            m_pSendBufTail->m_next = pSendBuf;
-            m_pSendBufTail = pSendBuf;
-        }
-    }
-    else  //socket exception
-    {
-        return;
-    }
-}
-*/
 
 void SslServerSession::SendData(const char *data, int len)
 {
@@ -221,7 +154,6 @@ void SslServerSession::SendData(const char *data, int len)
     else
     {
 topending:
-        printf("pending\n");
         SendBuf *pSendBuf = new SendBuf;
         assert(len - sended > 0);
         pSendBuf->m_data = new char [len - sended];
@@ -237,6 +169,10 @@ topending:
         {
             m_pSendBufTail->m_next = pSendBuf;
             m_pSendBufTail = pSendBuf;
+        }
+        if (-1 == sw_ev_io_add(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_WRITE, TcpSession::OnSessionIOReady, this))
+        {
+            printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
         }
     }
 }
@@ -290,6 +226,10 @@ int SslServerSession::SendPendingData()
         }
     }
     m_pSendBufHead = m_pSendBufTail = NULL;
+    if (-1 == sw_ev_io_del(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_WRITE))
+    {
+        printf("sw_ev_io_del failed. At %s:%d\n", basename(__FILE__), __LINE__);
+    }
     return 0; //all pending data sended
 }
 

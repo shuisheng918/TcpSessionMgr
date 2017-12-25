@@ -1,10 +1,10 @@
-#include "HttpServerSession.h"
+#include "HttpsServerSession.h"
 #include <string.h>
 #include "utils.h"
 
 using namespace std;
 
-void HttpServerSession::OnRecvData(const char *data, int len)
+void HttpsServerSession::OnRecvData(const char *data, int len)
 {
     int ret = 0;
     m_decoder.AppendData(data, len);
@@ -35,7 +35,7 @@ void HttpServerSession::OnRecvData(const char *data, int len)
     }
 }
 
-void HttpServerSession::ProcessHttpRequest()
+void HttpsServerSession::ProcessHttpRequest()
 {
     m_response.Reset();
     m_response.SetVersion(m_request.GetVersion());
@@ -53,7 +53,7 @@ void HttpServerSession::ProcessHttpRequest()
     SendResponse();
 }
 
-void HttpServerSession::SendResponse()
+void HttpsServerSession::SendResponse()
 {
     char codeBuf[10], contentLenBuf[20];
     snprintf(codeBuf, sizeof(codeBuf), "%d", m_response.GetRespCode());
@@ -85,5 +85,4 @@ void HttpServerSession::SendResponse()
         SetSentClose(true);
     }
 }
-
 

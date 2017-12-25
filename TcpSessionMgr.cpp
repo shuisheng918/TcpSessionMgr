@@ -16,6 +16,7 @@
 
 #ifdef ENABLE_SSL
 #include "SslServerSession.h"
+#include "HttpsServerSession.h"
 #endif
 
 using namespace std;
@@ -317,7 +318,7 @@ int TcpSessionManager::BeginSession(int connFd, int peerIp, int peerPort, int se
     pSession->m_socket = connFd;
     pSession->m_sessionType = sessionType;
     pSession->m_pSessionMgr = this;
-    if (-1 == sw_ev_io_add(m_pEvCtx, pSession->m_socket, SW_EV_READ | SW_EV_WRITE, TcpSession::OnSessionIOReady, pSession))
+    if (-1 == sw_ev_io_add(m_pEvCtx, pSession->m_socket, SW_EV_READ, TcpSession::OnSessionIOReady, pSession))
     {
         printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
         delete pSession;
@@ -405,6 +406,8 @@ TcpSession * TcpSessionManager::CreateSession(int sessionType)
         case SSL_SERVER_SESSION:
             pNewSession = new SslServerSession;
             break;
+        case HTTPS_SERVER_SESSION:
+            pNewSession = new HttpsServerSession;
 #endif
     }
     return pNewSession;

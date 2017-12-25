@@ -3,19 +3,19 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "TcpSessionMgr.h"
-#include "SslServerSession.h"
+#include "HttpsServerSession.h"
 
 SSL_CTX * g_pSSLCtx;
 
-class MySslServer : public TcpSessionManager
+class MyHttpsServer : public TcpSessionManager
 {
 public:
     virtual void OnSessionHasBegin(TcpSession *pSession)
     {
         printf("OnSessionHasBegin,sid=%lu\n", pSession->GetSessionID());
-        if (pSession->GetSessionType() == SSL_SERVER_SESSION)
+        if (pSession->GetSessionType() == HTTPS_SERVER_SESSION)
         {
-            ((SslServerSession*)pSession)->Init(g_pSSLCtx);
+            ((HttpsServerSession*)pSession)->Init(g_pSSLCtx);
         }
     }
     virtual void OnSessionWillEnd(TcpSession *pSession)
@@ -71,9 +71,9 @@ int main(void)
     sw_ev_signal_add(pEvCtx, SIGINT, OnSignal, pEvCtx);
     sw_ev_signal_add(pEvCtx, SIGTERM, OnSignal, pEvCtx);
     sw_ev_signal_add(pEvCtx, SIGPIPE, OnSignal, pEvCtx);
-    MySslServer *pServer = new MySslServer;
+    MyHttpsServer *pServer = new MyHttpsServer;
     pServer->SetEventCtx(pEvCtx);
-    pServer->BindAndListen("0.0.0.0", 1111, SSL_SERVER_SESSION);
+    pServer->BindAndListen("0.0.0.0", 443, HTTPS_SERVER_SESSION);
     sw_ev_loop(pEvCtx);
     delete pServer;
     pServer = NULL;

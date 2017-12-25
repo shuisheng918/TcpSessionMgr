@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
 #include <sw_event.h>
 
 #include "TcpSessionMgr.h"
@@ -68,7 +69,6 @@ TcpSession::~TcpSession()
 
 void TcpSession::OnRead()
 {
-    // default implement
     int ret;
     bool bNeedEndSession = false;
     char buf[4096];
@@ -137,9 +137,8 @@ void TcpSession::SendData(const char *data, int len)
     {
         return;
     }
-    int retSendPending = SendPendingData();
     int sended = 0;
-    if (retSendPending == 0)
+    if (m_pSendBufTail == NULL)
     {
         int ret;
         while ((ret = write(m_socket, &data[sended], len - sended)))
@@ -175,7 +174,7 @@ void TcpSession::SendData(const char *data, int len)
             }
         }
     }
-    else if (retSendPending == 1) //append data to pending data list tail
+    else //append data to pending data list tail
     {
 topending:
         SendBuf *pSendBuf = new SendBuf;
@@ -194,10 +193,10 @@ topending:
             m_pSendBufTail->m_next = pSendBuf;
             m_pSendBufTail = pSendBuf;
         }
-    }
-    else  //socket exception
-    {
-        return;
+        if (-1 == sw_ev_io_add(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_WRITE, TcpSession::OnSessionIOReady, this))
+        {
+            printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
+        }
     }
 }
 
@@ -248,6 +247,10 @@ int TcpSession::SendPendingData()
         }
     }
     m_pSendBufHead = m_pSendBufTail = NULL;
+    if (-1 == sw_ev_io_del(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_WRITE))
+    {
+        printf("sw_ev_io_del failed. At %s:%d\n", basename(__FILE__), __LINE__);
+    }
     return 0; //all pending data sended
 }
 

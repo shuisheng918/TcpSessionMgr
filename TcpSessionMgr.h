@@ -28,7 +28,7 @@ enum  ESessionType
     HTTP_CLIENT_SESSION,
 #ifdef ENABLE_SSL
     SSL_SERVER_SESSION,
-    SSL_CLIENT_SESSION,
+    HTTPS_SERVER_SESSION,
 #endif
     // add your self session type here
 };
