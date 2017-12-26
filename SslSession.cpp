@@ -1,13 +1,13 @@
 #ifdef ENABLE_SSL
 
-#include "SslServerSession.h"
+#include "SslSession.h"
 #include <assert.h>
 #include <openssl/err.h>
 #include <string>
 #include <sw_event.h>
 #include "TcpSessionMgr.h"
 
-SslServerSession::~SslServerSession()
+SslSession::~SslSession()
 {
     if (m_pSSL != NULL)
     {
@@ -16,16 +16,23 @@ SslServerSession::~SslServerSession()
     }
 }
 
-void SslServerSession::Init(SSL_CTX *pSslCtx)
+void SslSession::Init(SSL_CTX *pSslCtx, bool bServer)
 {
     m_pSSLCtx = pSslCtx;
     m_pSSL = SSL_new(m_pSSLCtx);
     SSL_set_fd(m_pSSL, m_socket);
-    SSL_set_accept_state(m_pSSL);
+    if (bServer)
+    {
+        SSL_set_accept_state(m_pSSL);
+    }
+    else
+    {
+        SSL_set_connect_state(m_pSSL);
+    }
     SSL_set_mode(m_pSSL, SSL_MODE_ENABLE_PARTIAL_WRITE);
 }
 
-void SslServerSession::OnRead()
+void SslSession::OnRead()
 {
     int ret = 0;
     if (m_state == INIT)
@@ -62,7 +69,6 @@ void SslServerSession::OnRead()
             OnRecvData(buf, ret);
         }
         int err = SSL_get_error(m_pSSL, ret);
-        assert(err != SSL_ERROR_WANT_WRITE);
         if (err != SSL_ERROR_WANT_READ)
         {
             SSL_shutdown(m_pSSL);
@@ -72,7 +78,7 @@ void SslServerSession::OnRead()
     }
 }
 
-void SslServerSession::OnWrite()
+void SslSession::OnWrite()
 {
     int ret = 0;
     if (m_state == INIT)
@@ -108,20 +114,20 @@ void SslServerSession::OnWrite()
 
 }
 
-void SslServerSession::OnRecvData(const char *data, int len)
+void SslSession::OnRecvData(const char *data, int len)
 {
     // echo
     SendData(data, len);
 }
 
-void SslServerSession::SendData(const char *data, int len)
+void SslSession::SendData(const char *data, int len)
 {
     if (data == NULL || len <= 0)
     {
         return;
     }
     int sended = 0;
-    if (m_pSendBufHead == NULL)
+    if (m_pSendBufHead == NULL && m_state == ESTABLESED)
     {
         int ret, err;
         while ((ret = SSL_write(m_pSSL, &data[sended], len - sended)) > 0)
@@ -138,7 +144,6 @@ void SslServerSession::SendData(const char *data, int len)
             }
         }
         err = SSL_get_error(m_pSSL, ret);
-        assert(err != SSL_ERROR_WANT_READ);
         if (ret < 0 && err == SSL_ERROR_WANT_WRITE)
         {
             goto topending;
@@ -184,7 +189,7 @@ topending:
  *     0    all pending data sended
  *     1    partial pending data sended
  */
-int SslServerSession::SendPendingData()
+int SslSession::SendPendingData()
 {
     SendBuf *pBuf = m_pSendBufHead;
     SendBuf *pTmp;
@@ -211,7 +216,6 @@ int SslServerSession::SendPendingData()
         else
         {
             err = SSL_get_error(m_pSSL, ret);
-            assert(err != SSL_ERROR_WANT_READ);
             if (ret < 0 && err == SSL_ERROR_WANT_WRITE)
             {
                 return 1;

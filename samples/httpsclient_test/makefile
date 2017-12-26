@@ -1,15 +1,15 @@
-TARGET = httpclient_test
+TARGET = httpsclient_test
 VPATH = .:../../
 INC_DIR = -I../../
-LIB_DIR =
+LIB_DIR = 
 
 RPATH=
 
 CC := g++
-CFLAGS := -Wall -g -std=c++0x $(INC_DIR)
-LDFLAG := $(RPATH)  $(LIB_DIR) -Wl,-Bstatic -lswevent -Wl,-Bdynamic
+CFLAGS := -DENABLE_SSL -Wall -g -std=c++0x $(INC_DIR)
+LDFLAG := $(RPATH)  $(LIB_DIR) -Wl,-Bstatic -lswevent -Wl,-Bdynamic -lssl
 
-SRCS := $(wildcard *.cpp wildcard ../../*.cpp)
+SRCS := $(wildcard *.cpp ../../*.cpp)
 $(warning  $(SRCS))
 basename_srcs := $(notdir $(SRCS))
 basename_objs := $(patsubst %.cpp,%.o,$(basename_srcs) )

@@ -15,7 +15,8 @@ public:
         printf("OnSessionHasBegin,sid=%lu\n", pSession->GetSessionID());
         if (pSession->GetSessionType() == HTTPS_SERVER_SESSION)
         {
-            ((HttpsServerSession*)pSession)->Init(g_pSSLCtx);
+            HttpsServerSession *pHttpsSerSession = dynamic_cast<HttpsServerSession*>(pSession);
+            pHttpsSerSession->Init(g_pSSLCtx, true);
         }
     }
     virtual void OnSessionWillEnd(TcpSession *pSession)

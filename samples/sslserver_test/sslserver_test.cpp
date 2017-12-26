@@ -3,7 +3,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "TcpSessionMgr.h"
-#include "SslServerSession.h"
+#include "SslSession.h"
 
 SSL_CTX * g_pSSLCtx;
 
@@ -15,7 +15,8 @@ public:
         printf("OnSessionHasBegin,sid=%lu\n", pSession->GetSessionID());
         if (pSession->GetSessionType() == SSL_SERVER_SESSION)
         {
-            ((SslServerSession*)pSession)->Init(g_pSSLCtx);
+            SslSession *pSslSession = dynamic_cast<SslSession*>(pSession);
+            pSslSession->Init(g_pSSLCtx, true);
         }
     }
     virtual void OnSessionWillEnd(TcpSession *pSession)

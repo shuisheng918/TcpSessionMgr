@@ -1,3 +1,5 @@
+#ifdef ENABLE_SSL
+
 #include "HttpsServerSession.h"
 #include <string.h>
 #include "utils.h"
@@ -85,4 +87,6 @@ void HttpsServerSession::SendResponse()
         SetSentClose(true);
     }
 }
+
+#endif
 

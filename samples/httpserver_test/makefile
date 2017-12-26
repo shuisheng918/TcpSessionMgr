@@ -1,7 +1,7 @@
 TARGET = httpserver_test
 VPATH = .:../../
-INC_DIR = -I/opt/libswevent/include -I../../
-LIB_DIR = -L/opt/libswevent/lib
+INC_DIR = -I../../
+LIB_DIR = 
 
 RPATH=
 

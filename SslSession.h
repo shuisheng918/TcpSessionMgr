@@ -5,7 +5,7 @@
 #include <openssl/ssl.h>
 #include "TcpSession.h"
 
-class SslServerSession : public TcpSession
+class SslSession : public TcpSession
 {
 public:
     enum ESslServerSessionState
@@ -16,11 +16,11 @@ public:
         CLOSE
     };
 public:
-    SslServerSession() : m_pSSLCtx(NULL), m_pSSL(NULL), m_state(INIT)
+    SslSession() : m_pSSLCtx(NULL), m_pSSL(NULL), m_state(INIT)
     {
     }
-    void Init(SSL_CTX *pSslCtx);
-    virtual ~SslServerSession();
+    void Init(SSL_CTX *pSslCtx, bool bServer);
+    virtual ~SslSession();
     
     virtual void OnRead();
     virtual void OnWrite();

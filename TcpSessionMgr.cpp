@@ -15,8 +15,10 @@
 #include "HttpClientSession.h"
 
 #ifdef ENABLE_SSL
-#include "SslServerSession.h"
+#include "SslSession.h"
 #include "HttpsServerSession.h"
+#include "HttpsClientSession.h"
+
 #endif
 
 using namespace std;
@@ -404,10 +406,15 @@ TcpSession * TcpSessionManager::CreateSession(int sessionType)
             break;
 #ifdef ENABLE_SSL
         case SSL_SERVER_SESSION:
-            pNewSession = new SslServerSession;
+        case SSL_CLIENT_SESSION:
+            pNewSession = new SslSession;
             break;
         case HTTPS_SERVER_SESSION:
             pNewSession = new HttpsServerSession;
+            break;
+        case HTTPS_CLIENT_SESSION:
+            pNewSession = new HttpsClientSession;
+            break;
 #endif
     }
     return pNewSession;

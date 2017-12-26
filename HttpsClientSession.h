@@ -3,32 +3,34 @@
 #ifdef ENABLE_SSL
 
 #include "SslSession.h"
-#include "HttpRequestDecoder.h"
+#include "HttpResponseDecoder.h"
 #include "HttpRequest.h"
 #include "HttpResponse.h"
 
-class HttpsServerSession : public SslSession
+class HttpsClientSession : public SslSession
 {
 public:
-    HttpsServerSession() : m_keepAlive(false)
+    HttpsClientSession() : m_keepAlive(false)
     {
-        m_decoder.SetRequest(&m_request);
+        m_decoder.SetResponse(&m_response);
+        m_request.SetVersion("HTTP/1.1");
     }
-
     HttpRequest * GetHttpRequest() { return &m_request; }
     HttpResponse * GetHttpResponse() { return &m_response; }
     bool IsKeepAlive() { return m_keepAlive; }
     void SetKeepAlive(bool keepAlive) { m_keepAlive = keepAlive; }
     
     virtual void OnRecvData(const char *data, int len);
-    virtual void ProcessHttpRequest();
+    virtual void ProcessHttpResponse();
 
-    void SendResponse();
+    void SendRequest();
     
 protected:
-    HttpRequestDecoder m_decoder;
+    HttpResponseDecoder m_decoder;
     HttpRequest  m_request;
     HttpResponse m_response;
+    std::string  m_host;
+    std::string  m_port;
     bool         m_keepAlive;
 };
 
