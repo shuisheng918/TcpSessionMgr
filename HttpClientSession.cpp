@@ -35,8 +35,8 @@ void HttpClientSession::OnRecvData(const char *data, int len)
 
 void HttpClientSession::ProcessHttpResponse()
 {
-    printf("recv http response:\n");
-    printf("%s\n", m_response.GetHttpBody().c_str());
+    log("recv http response:");
+    log("%s", m_response.GetHttpBody().c_str());
 }
 
 void HttpClientSession::SendRequest()

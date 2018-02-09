@@ -10,7 +10,7 @@
 #define INVALID_SESSION_ID  (-1UL)
 
 
-class TcpSessionManager;
+class TcpSessionMgr;
 
 struct ListenInfo
 {
@@ -18,7 +18,7 @@ struct ListenInfo
     int m_bindPort;
     int m_listenFd;
     int m_sessionType; // new created sessionn use this type
-    TcpSessionManager * m_pSessionMgr;
+    TcpSessionMgr * m_pSessionMgr;
 };
 
 enum  ESessionType
@@ -35,13 +35,13 @@ enum  ESessionType
     // add your self session type here
 };
 
-class TcpSessionManager
+class TcpSessionMgr
 {
 public:
-    TcpSessionManager() : m_pEvCtx(NULL), m_pSessionGCCheck(NULL)
+    TcpSessionMgr() : m_pEvCtx(NULL), m_pSessionGCCheck(NULL)
     {
     }
-    virtual ~TcpSessionManager();
+    virtual ~TcpSessionMgr();
     
     void SetEventCtx(sw_ev_context_t *ctx) { m_pEvCtx = ctx; }
     sw_ev_context_t * GetEventCtx() { return m_pEvCtx; }

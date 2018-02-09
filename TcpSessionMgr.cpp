@@ -10,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "utils.h"
 #include "DefaultTcpSession.h"
 #include "HttpServerSession.h"
 #include "HttpClientSession.h"
@@ -18,7 +19,6 @@
 #include "SslSession.h"
 #include "HttpsServerSession.h"
 #include "HttpsClientSession.h"
-
 #endif
 
 using namespace std;
@@ -29,13 +29,13 @@ void SetNonBlock(int sock)
     opts=fcntl(sock,F_GETFL);
     if(opts<0)
     {
-        printf("fcntl:%s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+        logerror("fcntl: %s.", strerror(errno));
         return;
     }
     opts = opts|O_NONBLOCK;
     if(fcntl(sock,F_SETFL,opts)<0)
     {
-        printf("fcntl:%s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+        logerror("fcntl: %s.", strerror(errno));
         return;
     }
 }
@@ -52,13 +52,13 @@ static inline unsigned long GenSessionId()
 }
 
 
-void TcpSessionManager::OnAcceptReady(const int listenFd, int events, void *arg)  
+void TcpSessionMgr::OnAcceptReady(const int listenFd, int events, void *arg)  
 {
     (void)events;
     ListenInfo *pListenInfo = (ListenInfo *)arg;
     if (pListenInfo != NULL)
     {
-        TcpSessionManager *pSessionMgr = pListenInfo->m_pSessionMgr;
+        TcpSessionMgr *pSessionMgr = pListenInfo->m_pSessionMgr;
         if (pSessionMgr != NULL)
         {
             assert(listenFd == pListenInfo->m_listenFd);
@@ -69,20 +69,20 @@ void TcpSessionManager::OnAcceptReady(const int listenFd, int events, void *arg)
 
 struct ConnectInfo
 {
-    TcpSessionManager *m_pSessionMgr;
+    TcpSessionMgr *m_pSessionMgr;
     int m_peerIp;
     int m_peerPort;
     int m_sessionType;
     struct sw_ev_context *m_pEvCtx;
 };
 
-void TcpSessionManager::OnConnectReady(const int connFd, int events, void *arg)
+void TcpSessionMgr::OnConnectReady(const int connFd, int events, void *arg)
 {
-    int sockErrno;
+    int sockErrno = 0;
     socklen_t len = 0;
     if (-1 == getsockopt(connFd, SOL_SOCKET, SO_ERROR, &sockErrno, &len))
     {
-        printf("getsockopt: %s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+        logerror("getsockopt: %s.", strerror(errno));
         return;
     }
     ConnectInfo *pConnInfo = (ConnectInfo*)arg;
@@ -90,6 +90,7 @@ void TcpSessionManager::OnConnectReady(const int connFd, int events, void *arg)
     assert(pConnInfo->m_pSessionMgr);
     if (sockErrno == 0 && (events & SW_EV_WRITE)) //ok ,connect success
     {
+        sw_ev_io_del(pConnInfo->m_pEvCtx, connFd, SW_EV_WRITE | SW_EV_READ);
         pConnInfo->m_pSessionMgr->OnConnect(connFd, pConnInfo->m_peerIp, pConnInfo->m_peerPort, 1, pConnInfo->m_sessionType);
     }
     else // connect fail
@@ -101,16 +102,16 @@ void TcpSessionManager::OnConnectReady(const int connFd, int events, void *arg)
     delete pConnInfo;
 }
 
-void TcpSessionManager::OnCheck(void *arg)
+void TcpSessionMgr::OnCheck(void *arg)
 {
-    TcpSessionManager *pMgr = (TcpSessionManager *)arg;
+    TcpSessionMgr *pMgr = (TcpSessionMgr *)arg;
     if (pMgr != NULL)
     {
         pMgr->OnSessionGC();
     }
 }
 
-void TcpSessionManager::BindAndListen(const char *ip, unsigned short port, int sessionType)
+void TcpSessionMgr::BindAndListen(const char *ip, unsigned short port, int sessionType)
 {
     if (ip == NULL)
     {
@@ -120,13 +121,13 @@ void TcpSessionManager::BindAndListen(const char *ip, unsigned short port, int s
     int listenSock = socket(AF_INET, SOCK_STREAM, 0);
     if (listenSock == -1)
     {
-       printf("socket:%s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+       logerror("socket: %s.", strerror(errno));
        exit(1);
     }
     int reuse = 1;
     if (setsockopt(listenSock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) == -1)
     {
-       perror("setsockopt");
+       logerror("setsockopt: %s.", strerror(errno));
        exit(1);
     }
     struct sockaddr_in serverAddr;  
@@ -135,14 +136,14 @@ void TcpSessionManager::BindAndListen(const char *ip, unsigned short port, int s
     serverAddr.sin_addr.s_addr = inet_addr(ip);
     serverAddr.sin_port = htons(port);
 
-    if(bind(listenSock,(struct sockaddr *)(&serverAddr),sizeof(struct sockaddr)) == -1)  
+    if(::bind(listenSock, (struct sockaddr *)(&serverAddr), sizeof(struct sockaddr)) == -1)  
     {  
-       printf("bind:%s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+       logerror("bind: %s.", strerror(errno));
        exit(1);
     }  
     if (listen(listenSock, 128) == -1)
     {  
-       printf("listen:%s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+       logerror("listen: %s.", strerror(errno));
        exit(1);
     }
     SetNonBlock(listenSock);
@@ -154,7 +155,7 @@ void TcpSessionManager::BindAndListen(const char *ip, unsigned short port, int s
     pListenInfo->m_sessionType = sessionType;
     if (-1 == sw_ev_io_add(m_pEvCtx, listenSock, SW_EV_READ, OnAcceptReady, pListenInfo))
     {
-        printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
+        logerror("sw_ev_io_add failed.");
         close(listenSock);
         delete pListenInfo;
         return;
@@ -163,7 +164,7 @@ void TcpSessionManager::BindAndListen(const char *ip, unsigned short port, int s
 
 }
 
-void TcpSessionManager::OnAccept(int listenFd, int sessionType)
+void TcpSessionMgr::OnAccept(int listenFd, int sessionType)
 {
     struct sockaddr_in addr;  
     socklen_t addrlen = sizeof(addr);  
@@ -189,13 +190,13 @@ void TcpSessionManager::OnAccept(int listenFd, int sessionType)
         }
         else // listen socket occur error
         {
-            printf("listen socket exception, exit\n");
+            logerror("listen socket exception, exit");
             exit(1);
         }
     }
 }
 
-void TcpSessionManager::OnSessionGC()
+void TcpSessionMgr::OnSessionGC()
 {
     TcpSession *pSession = NULL;
     for (auto it = m_sessionGC.begin(); it != m_sessionGC.end(); ++it)
@@ -215,12 +216,12 @@ void TcpSessionManager::OnSessionGC()
  *   -1   connect error
  *    0   request connect ok. 
  */
-int TcpSessionManager::Connect(const char *ip, unsigned short port, int sessionType)
+int TcpSessionMgr::Connect(const char *ip, unsigned short port, int sessionType)
 {
     int connFd = socket(AF_INET, SOCK_STREAM, 0);
     if (connFd == -1)
     {
-       printf("socket:%s. At %s:%d\n", strerror(errno), basename(__FILE__), __LINE__);
+       logerror("socket: %s.", strerror(errno));
        exit(1);
     }
     struct sockaddr_in serverAddr;  
@@ -239,7 +240,7 @@ int TcpSessionManager::Connect(const char *ip, unsigned short port, int sessionT
         }
         else
 		{
-			printf("gethostbyname_r failed, ip=%s\n", ip);
+			logerror("gethostbyname_r failed, ip=%s", ip);
 			return -1;
 		}
 	}
@@ -257,7 +258,7 @@ reconnect:
         else if (errno != EINPROGRESS)  // occour error
         {
             close(connFd);
-            printf("connect %s:%d failed : %s. At %s:%d\n", ip, port, strerror(errno), basename(__FILE__), __LINE__);
+            logerror("connect %s:%d failed : %s.", ip, port, strerror(errno));
             return -1;
         }
         // connect in progress
@@ -269,7 +270,7 @@ reconnect:
         pConnInfo->m_pEvCtx = m_pEvCtx;
         if (-1 == sw_ev_io_add(m_pEvCtx, connFd, SW_EV_WRITE | SW_EV_READ, OnConnectReady, pConnInfo))
         {
-            printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
+            logerror("sw_ev_io_add failed.");
             close(connFd);
             delete pConnInfo;
             return -1;
@@ -283,7 +284,7 @@ reconnect:
     }
 }
 
-void TcpSessionManager::OnConnect(int connFd, int peerIp, int peerPort, int success, int sessionType)
+void TcpSessionMgr::OnConnect(int connFd, int peerIp, int peerPort, int success, int sessionType)
 {
     if (success)
     {
@@ -295,23 +296,23 @@ void TcpSessionManager::OnConnect(int connFd, int peerIp, int peerPort, int succ
     else
     {
         char addrBuf[16];
-        unsigned char part1 = (((unsigned)peerIp && 0xff000000) >> 24);
-        unsigned char part2 = (((unsigned)peerIp && 0xff0000) >> 16);
-        unsigned char part3 = (((unsigned)peerIp && 0xff00) >> 8);
-        unsigned char part4 = (((unsigned)peerIp && 0xff));
+        unsigned char part1 = (((unsigned)peerIp & 0xff000000) >> 24);
+        unsigned char part2 = (((unsigned)peerIp & 0xff0000) >> 16);
+        unsigned char part3 = (((unsigned)peerIp & 0xff00) >> 8);
+        unsigned char part4 = (((unsigned)peerIp & 0xff));
         snprintf(addrBuf, sizeof(addrBuf), "%d.%d.%d.%d", 
                  part1, part2, part3, part4);
-        printf("connect %s:%d failed, sessionType=%d\n", addrBuf, peerPort, sessionType);
+        logerror("connect %s:%d failed, sessionType=%d", addrBuf, peerPort, sessionType);
     }
 }
 
-int TcpSessionManager::BeginSession(int connFd, int peerIp, int peerPort, int sessionType)
+int TcpSessionMgr::BeginSession(int connFd, int peerIp, int peerPort, int sessionType)
 {
     SetNonBlock(connFd);
     TcpSession *pSession = CreateSession(sessionType);
     if (pSession == NULL)
     {
-        printf("CreateSession failed\n");
+        logerror("CreateSession failed");
         return -1;
     }
     pSession->m_sessionId = GenSessionId();
@@ -322,7 +323,7 @@ int TcpSessionManager::BeginSession(int connFd, int peerIp, int peerPort, int se
     pSession->m_pSessionMgr = this;
     if (-1 == sw_ev_io_add(m_pEvCtx, pSession->m_socket, SW_EV_READ, TcpSession::OnSessionIOReady, pSession))
     {
-        printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
+        logerror("sw_ev_io_add failed.");
         delete pSession;
         return -1;
     }
@@ -340,7 +341,7 @@ int TcpSessionManager::BeginSession(int connFd, int peerIp, int peerPort, int se
     return 0;
 }
 
-void TcpSessionManager::EndSession(unsigned long sessionId)
+void TcpSessionMgr::EndSession(unsigned long sessionId)
 {
     TcpSession *pSession = GetSession(sessionId);
     if (pSession != NULL)
@@ -356,7 +357,7 @@ void TcpSessionManager::EndSession(unsigned long sessionId)
     }
 }
 
-bool TcpSessionManager::AddSession(TcpSession *pSession)
+bool TcpSessionMgr::AddSession(TcpSession *pSession)
 {
     if (pSession != NULL)
     {
@@ -366,12 +367,12 @@ bool TcpSessionManager::AddSession(TcpSession *pSession)
     return false;
 }
 
-void TcpSessionManager::RemoveSession(unsigned long sessionId)
+void TcpSessionMgr::RemoveSession(unsigned long sessionId)
 {
     m_sessions.erase(sessionId);
 }
 
-TcpSession * TcpSessionManager::GetSession(unsigned long sessionId)
+TcpSession * TcpSessionMgr::GetSession(unsigned long sessionId)
 {
     auto iter = m_sessions.find(sessionId);
     if (iter != m_sessions.end())
@@ -381,7 +382,7 @@ TcpSession * TcpSessionManager::GetSession(unsigned long sessionId)
     return NULL;
 }
 
-void TcpSessionManager::SendData(unsigned long sessionId, const char * data, int len)
+void TcpSessionMgr::SendData(unsigned long sessionId, const char * data, int len)
 {
     TcpSession *pSession = GetSession(sessionId);
     if (pSession != NULL)
@@ -390,7 +391,7 @@ void TcpSessionManager::SendData(unsigned long sessionId, const char * data, int
     }
 }
 
-TcpSession * TcpSessionManager::CreateSession(int sessionType)
+TcpSession * TcpSessionMgr::CreateSession(int sessionType)
 {
     TcpSession *pNewSession = NULL;
     switch (sessionType)
@@ -420,7 +421,7 @@ TcpSession * TcpSessionManager::CreateSession(int sessionType)
     return pNewSession;
 }
 
-TcpSessionManager::~TcpSessionManager()
+TcpSessionMgr::~TcpSessionMgr()
 {
     auto iter = m_sessions.begin(), end = m_sessions.end();
     for (; iter != end; ++iter)

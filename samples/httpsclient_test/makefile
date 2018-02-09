@@ -7,7 +7,7 @@ RPATH=
 
 CC := g++
 CFLAGS := -DENABLE_SSL -Wall -g -std=c++0x $(INC_DIR)
-LDFLAG := $(RPATH)  $(LIB_DIR) -Wl,-Bstatic -lswevent -Wl,-Bdynamic -lssl
+LDFLAG := $(RPATH)  $(LIB_DIR) -Wl,-Bstatic -lswevent -Wl,-Bdynamic -lssl -pthread
 
 SRCS := $(wildcard *.cpp ../../*.cpp)
 $(warning  $(SRCS))

@@ -4,8 +4,7 @@
 
 #include <stdlib.h>
 
-class TcpSession;
-class TcpSessionManager;
+class TcpSessionMgr;
 
 struct SendBuf
 {
@@ -17,7 +16,7 @@ struct SendBuf
 
 class TcpSession
 {
-    friend class TcpSessionManager;
+    friend class TcpSessionMgr;
 public:
     TcpSession() : m_sessionId(-1), m_peerIp(0), m_peerPort(0), m_socket(-1), 
         m_sessionType(0), m_pUserObj(NULL), m_pSendBufHead(NULL), m_pSendBufTail(NULL), m_pSessionMgr(NULL), m_sentClose(false)
@@ -42,6 +41,7 @@ public:
     int    GetSocket() { return m_socket; }
     void   SetUserObj(void *pObj) { m_pUserObj = pObj; }
     void * GetUserObj() { return m_pUserObj; }
+    TcpSessionMgr * GetSessionManager() { return m_pSessionMgr; }
     
 protected:
     static void OnSessionIOReady(int fd, int events, void *arg);
@@ -54,7 +54,7 @@ protected:
     void * m_pUserObj;
     SendBuf * m_pSendBufHead;
     SendBuf * m_pSendBufTail;
-    TcpSessionManager * m_pSessionMgr;
+    TcpSessionMgr * m_pSessionMgr;
     bool m_sentClose;
 };
 

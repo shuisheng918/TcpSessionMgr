@@ -19,8 +19,8 @@ public:
     
 private:
     unsigned int m_nMaxMsgLen;
-    std::string m_data;
     unsigned int m_nPos;
+    std::string m_data;
 };
 
 
@@ -28,10 +28,7 @@ class DefaultTcpSession : public TcpSession
 {
 public:
     virtual void OnRecvData(const char *data, int len);
-    virtual void ProcessMessage(const char *data, int len)
-    {
-        printf("msg=%p,len=%d\n", data, len);
-    }
+    virtual void ProcessMessage(const char *data, int len);
 protected:
     DefaultMsgDecoder m_decoder;
 };

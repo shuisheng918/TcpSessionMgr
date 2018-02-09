@@ -14,8 +14,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sw_event.h>
-
+#include "utils.h"
 #include "TcpSessionMgr.h"
+
 
 using namespace std;
 
@@ -195,7 +196,7 @@ topending:
         }
         if (-1 == sw_ev_io_add(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_WRITE, TcpSession::OnSessionIOReady, this))
         {
-            printf("sw_ev_io_add failed. At %s:%d\n", basename(__FILE__), __LINE__);
+            logerror("sw_ev_io_add failed.");
         }
     }
 }
@@ -249,7 +250,7 @@ int TcpSession::SendPendingData()
     m_pSendBufHead = m_pSendBufTail = NULL;
     if (-1 == sw_ev_io_del(m_pSessionMgr->GetEventCtx(), m_socket, SW_EV_WRITE))
     {
-        printf("sw_ev_io_del failed. At %s:%d\n", basename(__FILE__), __LINE__);
+        logerror("sw_ev_io_del failed.");
     }
     return 0; //all pending data sended
 }

@@ -1,14 +1,15 @@
 #include <signal.h>
 #include <stdio.h>
+#include "utils.h"
 #include "TcpSessionMgr.h"
 #include "HttpClientSession.h"
 
-class MyHttpClient : public TcpSessionManager
+class MyHttpClient : public TcpSessionMgr
 {
 public:
     virtual void OnSessionHasBegin(TcpSession *pSession)
     {
-        //printf("OnSessionHasBegin,sid=%lu\n", pSession->GetSessionID());
+        //log("OnSessionHasBegin,sid=%lu", pSession->GetSessionID());
         if (pSession->GetSessionType() == HTTP_CLIENT_SESSION)
         {
             HttpClientSession *pHttpSession = dynamic_cast<HttpClientSession*>(pSession);
@@ -24,7 +25,7 @@ public:
     }
     virtual void OnSessionWillEnd(TcpSession *pSession)
     {
-        //printf("OnSessionWillEnd,sid=%lu\n", pSession->GetSessionID());
+        //log("OnSessionWillEnd,sid=%lu", pSession->GetSessionID());
     }
 
 };
@@ -34,17 +35,22 @@ void OnSignal(int sig, void * arg)
     if (sig == SIGINT || sig == SIGTERM)
     {
         sw_ev_loop_exit((sw_ev_context_t *)arg);
-        printf("exit loop\n");
+        log("exit loop");
     }
 }
 
 void OnLog(int level, const char *msg)
 {
-    printf("libswevent log: level=%d, msg=%s\n", level, msg);
+    log("libswevent log: level=%d, msg=%s", level, msg);
 }
 
 int main(void)
 {
+    if (!SimpleLog::GetInstance()->Startup("", 0, 0))
+    {
+        printf("log startup failed, exit\n");
+        exit(1);
+    }
     sw_ev_context_t * pEvCtx = sw_ev_context_new();
     sw_set_log_func(OnLog);
     sw_ev_signal_add(pEvCtx, SIGINT, OnSignal, pEvCtx);

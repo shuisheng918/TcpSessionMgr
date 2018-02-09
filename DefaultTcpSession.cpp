@@ -1,4 +1,5 @@
 #include "DefaultTcpSession.h"
+#include "utils.h"
 #include "TcpSessionMgr.h"
 
 using namespace std;
@@ -71,5 +72,8 @@ void DefaultTcpSession::OnRecvData(const char *data, int len)
     }
 }
 
-
+void DefaultTcpSession::ProcessMessage(const char *data, int len)
+{
+    log("msg=%p,len=%d", data, len);
+}
 

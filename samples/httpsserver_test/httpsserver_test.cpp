@@ -2,17 +2,18 @@
 #include <stdio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include "utils.h"
 #include "TcpSessionMgr.h"
 #include "HttpsServerSession.h"
 
 SSL_CTX * g_pSSLCtx;
 
-class MyHttpsServer : public TcpSessionManager
+class MyHttpsServer : public TcpSessionMgr
 {
 public:
     virtual void OnSessionHasBegin(TcpSession *pSession)
     {
-        printf("OnSessionHasBegin,sid=%lu\n", pSession->GetSessionID());
+        log("OnSessionHasBegin,sid=%lu", pSession->GetSessionID());
         if (pSession->GetSessionType() == HTTPS_SERVER_SESSION)
         {
             HttpsServerSession *pHttpsSerSession = dynamic_cast<HttpsServerSession*>(pSession);
@@ -21,7 +22,7 @@ public:
     }
     virtual void OnSessionWillEnd(TcpSession *pSession)
     {
-        printf("OnSessionWillEnd,sid=%lu\n", pSession->GetSessionID());
+        log("OnSessionWillEnd,sid=%lu", pSession->GetSessionID());
     }
 
 };
@@ -31,17 +32,23 @@ void OnSignal(int sig, void * arg)
     if (sig == SIGINT || sig == SIGTERM)
     {
         sw_ev_loop_exit((sw_ev_context_t *)arg);
-        printf("exit loop\n");
+        log("exit loop");
     }
 }
 
 void OnLog(int level, const char *msg)
 {
-    printf("libswevent log: level=%d, msg=%s\n", level, msg);
+    log("libswevent log: level=%d, msg=%s", level, msg);
 }
 
 int main(void)
 {
+    if (!SimpleLog::GetInstance()->Startup("", 0, 0))
+    {
+        printf("log startup failed, exit\n");
+        exit(1);
+    }
+
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();

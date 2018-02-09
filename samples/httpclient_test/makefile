@@ -7,7 +7,7 @@ RPATH=
 
 CC := g++
 CFLAGS := -Wall -g -std=c++0x $(INC_DIR)
-LDFLAG := $(RPATH)  $(LIB_DIR) -Wl,-Bstatic -lswevent -Wl,-Bdynamic
+LDFLAG := $(RPATH)  $(LIB_DIR) -Wl,-Bstatic -lswevent -Wl,-Bdynamic -pthread
 
 SRCS := $(wildcard *.cpp wildcard ../../*.cpp)
 $(warning  $(SRCS))

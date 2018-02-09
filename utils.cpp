@@ -3,6 +3,16 @@
 
 using namespace std;
 
+uint64_t htonll(uint64_t val)
+{
+    return (((uint64_t) htonl(val)) << 32) + htonl(val >> 32);
+}
+
+uint64_t ntohll(uint64_t val)
+{
+    return (((uint64_t) ntohl(val)) << 32) + ntohl(val >> 32);
+}
+
 void TrimString(string & str)
 {
     int len = (int)str.size();
@@ -10,7 +20,7 @@ void TrimString(string & str)
     int i = 0;
     for (; i < len; ++i)
     {
-        if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n')
+        if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n' && str[i] != '\r')
         {
             break;
         }
@@ -22,7 +32,7 @@ void TrimString(string & str)
     len = (int)str.size();
     for (i = len - 1; i >= 0; --i)
     {
-        if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n')
+        if (str[i] != ' ' && str[i] != '\t' && str[i] != '\n' && str[i] != '\r')
         {
             break;
         } 
