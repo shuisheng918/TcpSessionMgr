@@ -22,7 +22,7 @@ public:
         m_sessionType(0), m_pUserObj(NULL), m_pSendBufHead(NULL), m_pSendBufTail(NULL), m_pSessionMgr(NULL), m_sentClose(false)
     {
     }
-    virtual ~TcpSession();
+    
     virtual void OnRead();
     virtual void OnWrite();
     virtual void OnRecvData(const char *data, int len) = 0;
@@ -44,6 +44,12 @@ public:
     TcpSessionMgr * GetSessionManager() { return m_pSessionMgr; }
     
 protected:
+    /**
+     * All tcp sessions is deleted by TcpSessionMgr automaticly, user code needn't delete it directly.
+     * So destructor function is not public.
+     */
+    virtual ~TcpSession();    
+    
     static void OnSessionIOReady(int fd, int events, void *arg);
     
     unsigned long m_sessionId;

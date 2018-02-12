@@ -72,10 +72,12 @@ public:
     virtual void OnConnect(int connFd, int peerIp, int peerPort, int success, int sessionType);
     /**
      * Overide this function to map sessionid and user object according your business logic.
+     * Do some init works for your sessions.
      */
     virtual void OnSessionHasBegin(TcpSession *pSession) {   }
     /**
      * Overide this function to unmap sessionid and user object according your business logic.
+     * Do some uinit works for your sessions.
      */
     virtual void OnSessionWillEnd(TcpSession *pSession) {   }
 protected:
