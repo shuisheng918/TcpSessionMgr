@@ -41,7 +41,7 @@ bool SimpleLog::Startup(const std::string  & logPath, unsigned int delay, unsign
     }
     if (m_pFile == NULL)
     {
-        printf("open log file %s failed.", logPath.c_str());
+        printf("open log file %s failed.\n", logPath.c_str());
         return false;
     }
     m_delay = delay;

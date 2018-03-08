@@ -123,6 +123,13 @@ void TcpSession::Close()
     m_pSessionMgr->EndSession(m_sessionId);
 }
 
+void TcpSession::ForceClose()
+{
+    struct linger ling = {1, 0};
+    setsockopt(m_socket, SOL_SOCKET, SO_LINGER, (void*)&ling, sizeof(ling));
+    m_pSessionMgr->EndSession(m_sessionId);
+}
+
 void TcpSession::SetSentClose(bool sentClose)
 {
     m_sentClose = sentClose;

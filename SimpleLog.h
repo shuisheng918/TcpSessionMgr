@@ -23,7 +23,7 @@ public:
      * Before using it, call Startup to init.
      * @param  logPath       If it is "" logs will be print to stdout else print logs to stdout.
      * @param  delay         Flush to disk file interval, set to 0 present realtime flush disk file. Unit is second.
-     * @param  rotateCycle   Rotate log cycle, set to 0 present not roate log. Unit is second.
+     * @param  rotateCycle   Rotate(rename old logfile) log cycle, set to 0 present not roate log. Unit is second.
      * @return  true - succes, false - failed
      */
     bool Startup(const std::string  & logPath, unsigned int delay, unsigned int rotateCycle);

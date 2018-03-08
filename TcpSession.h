@@ -28,6 +28,9 @@ public:
     virtual void OnRecvData(const char *data, int len) = 0;
 
     void Close();
+	// close socket with RESET
+    void ForceClose();
+    
     /**
      * When sentClose is true, this session will be closed after sended all pending data.
      */
