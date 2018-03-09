@@ -73,36 +73,22 @@ void TcpSession::OnRead()
     int ret;
     bool bNeedEndSession = false;
     char buf[4096];
-    while (true)
+    ret = read(m_socket, buf, sizeof(buf));
+    if (ret > 0)
     {
-        ret = read(m_socket, buf, sizeof(buf));
-        if (ret > 0)
-        {
-            OnRecvData(buf, ret);
-        }
-        else if (ret == 0)
-        {// closed by peer host
+        OnRecvData(buf, ret);
+    }
+    else if (ret == 0)
+    {// closed by peer host
+        bNeedEndSession = true;
+    }
+    else if (ret < 0) // no need process EINTR error in non-block socket
+    {
+        if (errno != EAGAIN)
+        {// socket occur exception
             bNeedEndSession = true;
-            break;
-        }
-        else if (ret < 0)
-        {
-            if (errno == EINTR)
-            {
-                continue;
-            }
-            else if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
-                break;
-            }
-            else
-            {// socket occur exception
-                bNeedEndSession = true;
-                break;
-            }
         }
     }
-    
     if (bNeedEndSession)
     {
         Close();
@@ -166,11 +152,7 @@ void TcpSession::SendData(const char *data, int len)
             }
             else // ret == -1
             {
-                if (errno == EINTR)
-                {
-                    continue;
-                }
-                else if (errno == EAGAIN || errno == EWOULDBLOCK)
+                if (errno == EAGAIN)
                 {
                     goto topending;
                 }
@@ -239,11 +221,7 @@ int TcpSession::SendPendingData()
         }
         else // ret == -1
         {
-            if (errno == EINTR)
-            {
-                continue;
-            }
-            else if (errno == EAGAIN || errno == EWOULDBLOCK)
+            if (errno == EAGAIN)
             {
                 return 1;  //sended some part
             }

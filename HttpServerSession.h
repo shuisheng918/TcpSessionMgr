@@ -22,10 +22,18 @@ public:
     virtual void ProcessHttpRequest();
 
     void SendResponse();
+
+    /**
+     * chunked data response
+     */
+    void SendResponseStart();
+    void SendChunk(const char * pChunk, int len);
+    void SendResponseEnd();
     
 protected:
     HttpRequestDecoder m_decoder;
     HttpRequest  m_request;
     HttpResponse m_response;
     bool         m_keepAlive;
+    std::string  m_tempChunkData;
 };

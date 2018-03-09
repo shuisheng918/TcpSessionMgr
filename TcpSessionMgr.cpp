@@ -170,7 +170,7 @@ void TcpSessionMgr::OnAccept(int listenFd, int sessionType)
     socklen_t addrlen = sizeof(addr);  
     int client;
     
-    while ( true )
+    while (true)
     {
         client = accept(listenFd, (struct sockaddr *) &addr, &addrlen);
         if (client >= 0)
@@ -180,11 +180,7 @@ void TcpSessionMgr::OnAccept(int listenFd, int sessionType)
                 close(client);
             }
         }
-        else if (errno == EINTR)
-        {
-            continue;
-        }
-        else if (errno == EAGAIN || errno == EWOULDBLOCK)
+        else if (errno == EAGAIN)
         {
             break;
         }
@@ -245,17 +241,11 @@ int TcpSessionMgr::Connect(const char *ip, unsigned short port, int sessionType)
 		}
 	}
     serverAddr.sin_port = htons(port);
-
     SetNonBlock(connFd);
-reconnect:
     int ret = connect(connFd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr));
     if (ret != 0)
     {
-        if (errno == EINTR || errno == EWOULDBLOCK)
-        {
-            goto reconnect;
-        }
-        else if (errno != EINPROGRESS)  // occour error
+        if (errno != EINPROGRESS)  // occour error
         {
             close(connFd);
             logerror("connect %s:%d failed : %s.", ip, port, strerror(errno));
