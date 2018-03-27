@@ -107,7 +107,7 @@ void TcpSession::OnWrite()
 void TcpSession::Close()
 {
     m_pSessionMgr->EndSession(m_sessionId);
-}
+}
 
 void TcpSession::ForceClose()
 {

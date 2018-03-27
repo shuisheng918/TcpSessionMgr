@@ -45,7 +45,10 @@ public:
     
     void SetEventCtx(sw_ev_context_t *ctx) { m_pEvCtx = ctx; }
     sw_ev_context_t * GetEventCtx() { return m_pEvCtx; }
-    void BindAndListen(const char *ip, unsigned short port, int sessionType);
+	/**
+	 * return 0 success, -1 failed.
+	 */
+    int BindAndListen(const char *ip, unsigned short port, int sessionType);
 
     /**
      * connect asynchronous, return 0 success, -1 error.

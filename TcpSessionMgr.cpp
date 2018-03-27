@@ -111,24 +111,24 @@ void TcpSessionMgr::OnCheck(void *arg)
     }
 }
 
-void TcpSessionMgr::BindAndListen(const char *ip, unsigned short port, int sessionType)
+int TcpSessionMgr::BindAndListen(const char *ip, unsigned short port, int sessionType)
 {
     if (ip == NULL)
     {
-        return;
+        return -1;
     }
     ListenInfo *pListenInfo = new ListenInfo;
     int listenSock = socket(AF_INET, SOCK_STREAM, 0);
     if (listenSock == -1)
     {
        logerror("socket: %s.", strerror(errno));
-       exit(1);
+       return -1;
     }
     int reuse = 1;
     if (setsockopt(listenSock, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse)) == -1)
     {
        logerror("setsockopt: %s.", strerror(errno));
-       exit(1);
+       return -1;
     }
     struct sockaddr_in serverAddr;  
     bzero(&serverAddr,sizeof(struct sockaddr_in));  
@@ -139,12 +139,12 @@ void TcpSessionMgr::BindAndListen(const char *ip, unsigned short port, int sessi
     if(::bind(listenSock, (struct sockaddr *)(&serverAddr), sizeof(struct sockaddr)) == -1)  
     {  
        logerror("bind: %s.", strerror(errno));
-       exit(1);
+       return -1;
     }  
     if (listen(listenSock, 128) == -1)
     {  
        logerror("listen: %s.", strerror(errno));
-       exit(1);
+       return -1;
     }
     SetNonBlock(listenSock);
 
@@ -158,7 +158,7 @@ void TcpSessionMgr::BindAndListen(const char *ip, unsigned short port, int sessi
         logerror("sw_ev_io_add failed.");
         close(listenSock);
         delete pListenInfo;
-        return;
+        return -1;
     }
     m_listens.push_back(pListenInfo);
 
@@ -186,8 +186,8 @@ void TcpSessionMgr::OnAccept(int listenFd, int sessionType)
         }
         else // listen socket occur error
         {
-            logerror("listen socket exception, exit");
-            exit(1);
+            logerror("listen socket exception");
+            return -1;
         }
     }
 }
@@ -218,7 +218,7 @@ int TcpSessionMgr::Connect(const char *ip, unsigned short port, int sessionType)
     if (connFd == -1)
     {
        logerror("socket: %s.", strerror(errno));
-       exit(1);
+       return -1;
     }
     struct sockaddr_in serverAddr;  
     bzero(&serverAddr, sizeof(struct sockaddr_in));
