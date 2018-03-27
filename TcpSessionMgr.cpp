@@ -187,7 +187,7 @@ void TcpSessionMgr::OnAccept(int listenFd, int sessionType)
         else // listen socket occur error
         {
             logerror("listen socket exception");
-            return -1;
+            return;
         }
     }
 }
