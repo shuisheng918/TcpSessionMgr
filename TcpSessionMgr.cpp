@@ -161,7 +161,7 @@ int TcpSessionMgr::BindAndListen(const char *ip, unsigned short port, int sessio
         return -1;
     }
     m_listens.push_back(pListenInfo);
-
+    return 0;
 }
 
 void TcpSessionMgr::OnAccept(int listenFd, int sessionType)
