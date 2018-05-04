@@ -1,4 +1,4 @@
-#include "simplelog.h"
+#include "simple_log.h"
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
