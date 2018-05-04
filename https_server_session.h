@@ -2,10 +2,10 @@
 
 #ifdef ENABLE_SSL
 
-#include "SslSession.h"
-#include "HttpRequestDecoder.h"
-#include "HttpRequest.h"
-#include "HttpResponse.h"
+#include "ssl_session.h"
+#include "http_request_decoder.h"
+#include "http_request.h"
+#include "http_response.h"
 
 class HttpsServerSession : public SslSession
 {

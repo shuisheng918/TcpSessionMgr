@@ -1,9 +1,9 @@
 #pragma once
 
-#include "TcpSession.h"
-#include "HttpRequestDecoder.h"
-#include "HttpRequest.h"
-#include "HttpResponse.h"
+#include "tcp_session.h"
+#include "http_request_decoder.h"
+#include "http_request.h"
+#include "http_response.h"
 
 class HttpServerSession : public TcpSession
 {

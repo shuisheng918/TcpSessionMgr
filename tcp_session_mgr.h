@@ -5,7 +5,7 @@
 #include <set>
 #include <sw_event.h>
 
-#include "TcpSession.h"
+#include "tcp_session.h"
 
 #define INVALID_SESSION_ID  (-1UL)
 

@@ -1,12 +1,10 @@
-#ifdef ENABLE_SSL
-
-#include "HttpsServerSession.h"
+#include "http_server_session.h"
 #include <string.h>
 #include "utils.h"
 
 using namespace std;
 
-void HttpsServerSession::OnRecvData(const char *data, int len)
+void HttpServerSession::OnRecvData(const char *data, int len)
 {
     int ret = 0;
     m_decoder.AppendData(data, len);
@@ -37,7 +35,7 @@ void HttpsServerSession::OnRecvData(const char *data, int len)
     }
 }
 
-void HttpsServerSession::ProcessHttpRequest()
+void HttpServerSession::ProcessHttpRequest()
 {
     m_response.Reset();
     m_response.SetVersion(m_request.GetVersion());
@@ -55,7 +53,7 @@ void HttpsServerSession::ProcessHttpRequest()
     SendResponse();
 }
 
-void HttpsServerSession::SendResponse()
+void HttpServerSession::SendResponse()
 {
     char codeBuf[10], contentLenBuf[20];
     snprintf(codeBuf, sizeof(codeBuf), "%d", m_response.GetRespCode());
@@ -88,5 +86,52 @@ void HttpsServerSession::SendResponse()
     }
 }
 
-#endif
+void HttpServerSession::SendResponseStart()
+{
+    char codeBuf[10];
+    snprintf(codeBuf, sizeof(codeBuf), "%d", m_response.GetRespCode());
+    string header = m_response.GetVersion() + " " + codeBuf + " "
+                    + HttpResponse::GetReason((HttpResponse::ERespCode)m_response.GetRespCode()) + "\r\n";
+    if (IsKeepAlive())
+    {
+        m_response.AddHeadField("connection", "keep-alive");
+    }
+    else
+    {
+        m_response.AddHeadField("connection", "close");
+    }
+    m_response.AddHeadField("transfer-encoding", "chunked");
+    const map<string, string> & headFields = m_response.GetHeadFields();
+    for (auto it = headFields.begin(); it != headFields.end(); ++it)
+    {
+        header += it->first;
+        header += ": ";
+        header += it->second;
+        header += "\r\n";
+    }
+    header += "\r\n";
+    SendData(header.data(), header.size());
+}
+
+void HttpServerSession::SendChunk(const char * pChunk, int len)
+{
+    if (pChunk == NULL || len <= 0)    return;
+    
+    char chunkLenBuf[64];
+    snprintf(chunkLenBuf, sizeof(chunkLenBuf), "%x\r\n", len);
+    m_tempChunkData.clear();
+    m_tempChunkData.append(chunkLenBuf, strlen(chunkLenBuf));
+    m_tempChunkData.append(pChunk, len);
+    m_tempChunkData.append("\r\n");
+    SendData(m_tempChunkData.data(), m_tempChunkData.size());
+}
+
+void HttpServerSession::SendResponseEnd()
+{
+    SendData("0\r\n\r\n", 5);
+    if (!IsKeepAlive())
+    {
+        SetSentClose(true);
+    }
+}
 

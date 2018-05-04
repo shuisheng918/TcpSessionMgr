@@ -1,12 +1,14 @@
-#include "HttpClientSession.h"
+#ifdef ENABLE_SSL
+
+#include "https_client_session.h"
 #include <string.h>
 #include "utils.h"
-#include "TcpSessionMgr.h"
+#include "tcp_session_mgr.h"
 
 
 using namespace std;
 
-void HttpClientSession::OnRecvData(const char *data, int len)
+void HttpsClientSession::OnRecvData(const char *data, int len)
 {
     int ret = 0;
     m_decoder.AppendData(data, len);
@@ -33,13 +35,13 @@ void HttpClientSession::OnRecvData(const char *data, int len)
     }
 }
 
-void HttpClientSession::ProcessHttpResponse()
+void HttpsClientSession::ProcessHttpResponse()
 {
     log("recv http response:");
     log("%s", m_response.GetHttpBody().c_str());
 }
 
-void HttpClientSession::SendRequest()
+void HttpsClientSession::SendRequest()
 {
     char hostBuf[64], contentLenBuf[20];
 
@@ -78,4 +80,4 @@ void HttpClientSession::SendRequest()
 }
 
 
-
+#endif

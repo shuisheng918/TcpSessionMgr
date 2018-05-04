@@ -1,4 +1,4 @@
-#include "TcpSessionMgr.h"
+#include "tcp_session_mgr.h"
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -11,14 +11,14 @@
 #include <assert.h>
 
 #include "utils.h"
-#include "DefaultTcpSession.h"
-#include "HttpServerSession.h"
-#include "HttpClientSession.h"
+#include "default_tcp_session.h"
+#include "http_server_session.h"
+#include "http_client_session.h"
 
 #ifdef ENABLE_SSL
-#include "SslSession.h"
-#include "HttpsServerSession.h"
-#include "HttpsClientSession.h"
+#include "ssl_session.h"
+#include "https_server_session.h"
+#include "https_client_session.h"
 #endif
 
 using namespace std;

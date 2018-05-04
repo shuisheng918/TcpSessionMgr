@@ -3,7 +3,7 @@
 #ifdef ENABLE_SSL
 
 #include <openssl/ssl.h>
-#include "TcpSession.h"
+#include "tcp_session.h"
 
 class SslSession : public TcpSession
 {

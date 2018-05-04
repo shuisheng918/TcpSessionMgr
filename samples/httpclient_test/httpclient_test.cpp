@@ -1,8 +1,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include "utils.h"
-#include "TcpSessionMgr.h"
-#include "HttpClientSession.h"
+#include "tcp_session_mgr.h"
+#include "http_client_session.h"
 
 class MyHttpClient : public TcpSessionMgr
 {

@@ -1,16 +1,14 @@
 #pragma once
 
-#ifdef ENABLE_SSL
+#include "tcp_session.h"
+#include "http_response_decoder.h"
+#include "http_request.h"
+#include "http_response.h"
 
-#include "SslSession.h"
-#include "HttpResponseDecoder.h"
-#include "HttpRequest.h"
-#include "HttpResponse.h"
-
-class HttpsClientSession : public SslSession
+class HttpClientSession : public TcpSession
 {
 public:
-    HttpsClientSession() : m_keepAlive(false)
+    HttpClientSession() : m_keepAlive(false)
     {
         m_decoder.SetResponse(&m_response);
         m_request.SetVersion("HTTP/1.1");
@@ -33,5 +31,3 @@ protected:
     std::string  m_port;
     bool         m_keepAlive;
 };
-
-#endif

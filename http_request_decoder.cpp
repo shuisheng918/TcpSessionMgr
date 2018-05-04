@@ -1,6 +1,6 @@
-#include "HttpRequestDecoder.h"
+#include "http_request_decoder.h"
 #include "utils.h"
-#include "HttpRequest.h"
+#include "http_request.h"
 
 using namespace std;
 

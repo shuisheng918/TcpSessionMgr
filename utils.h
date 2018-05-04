@@ -8,7 +8,7 @@
 #include <string>
 #include <alloca.h>
 #include <map>
-#include "SimpleLog.h"
+#include "simplelog.h"
 
 #define DELETE(p)   if (p) { delete p; p = NULL; }
 #define DELETEV(p)  if (p) { delete [] p; p = NULL; }

@@ -1,12 +1,12 @@
 #ifdef ENABLE_SSL
 
-#include "SslSession.h"
+#include "ssl_session.h"
 #include <assert.h>
 #include <openssl/err.h>
 #include <string>
 #include <sw_event.h>
 #include "utils.h"
-#include "TcpSessionMgr.h"
+#include "tcp_session_mgr.h"
 
 SslSession::~SslSession()
 {

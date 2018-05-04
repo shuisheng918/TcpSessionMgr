@@ -1,6 +1,6 @@
-#include "HttpResponseDecoder.h"
+#include "http_response_decoder.h"
 #include "utils.h"
-#include "HttpResponse.h"
+#include "http_response.h"
 
 using namespace std;
 

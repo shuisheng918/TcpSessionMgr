@@ -3,8 +3,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "utils.h"
-#include "TcpSessionMgr.h"
-#include "SslSession.h"
+#include "tcp_session_mgr.h"
+#include "ssl_session.h"
 
 SSL_CTX * g_pSSLCtx;
 

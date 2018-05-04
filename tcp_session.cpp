@@ -7,7 +7,7 @@
  * Copyright (c) 2017 ShuishengWu <shuisheng918@gmail.com>
  */
 
-#include "TcpSession.h"
+#include "tcp_session.h"
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <sw_event.h>
 #include "utils.h"
-#include "TcpSessionMgr.h"
+#include "tcp_session_mgr.h"
 
 
 using namespace std;
